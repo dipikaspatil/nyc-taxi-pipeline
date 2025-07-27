@@ -25,6 +25,8 @@ Option	   Description
 ✅ Verify it’s running
 ```
 docker ps
+CONTAINER ID   IMAGE         COMMAND                  CREATED          STATUS          PORTS                                         NAMES
+435e6681c693   postgres:15   "docker-entrypoint.s…"   13 seconds ago   Up 12 seconds   0.0.0.0:5432->5432/tcp, [::]:5432->5432/tcp   nyc-postgres
 ```
 See the nyc-postgres container running.
 
