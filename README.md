@@ -72,8 +72,7 @@ Start with a small dataset to avoid memory issues during early exploration.
 Download a monthly Parquet or CSV file, like:
 
 ```
-wget https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2023-01.csv.gz
-gunzip yellow_tripdata_2023-01.csv.gz
+wget https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2023-01.parquet
 ```
 👉 File will be around 75–200 MB (compressed) and contain millions of rows.
 
