@@ -81,6 +81,10 @@ wget https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2023-01.par
 ```
 import pandas as pd
 
+df = pd.read_parquet('yellow_tripdata_2023-01.parquet')
+df.to_csv('yellow_tripdata_2023-01.csv', index=False)
+print("CSV file saved as 'yellow_tripdata_2023-01.csv'")
+
 df = pd.read_csv('yellow_tripdata_2023-01.csv')
 
 print(df.head())
