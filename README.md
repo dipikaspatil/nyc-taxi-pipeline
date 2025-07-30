@@ -42,6 +42,8 @@ Connect using:
 ```
 pgcli:
 pgcli -h localhost -p 5432 -U myuser -d nyc_taxi
+
+Node: if needed install pgcli using "brew install pgcli"
 ```
 
 ```
@@ -72,7 +74,7 @@ Start with a small dataset to avoid memory issues during early exploration.
 Download a monthly Parquet or CSV file, like:
 
 ```
-wget https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2023-01.parquet
+wget https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2025-01.parquet
 ```
 👉 File will be around 75–200 MB (compressed) and contain millions of rows.
 
@@ -81,11 +83,11 @@ wget https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2023-01.par
 ```
 import pandas as pd
 
-df = pd.read_parquet('yellow_tripdata_2023-01.parquet')
-df.to_csv('yellow_tripdata_2023-01.csv', index=False)
-print("CSV file saved as 'yellow_tripdata_2023-01.csv'")
+df = pd.read_parquet('yellow_tripdata_2025-01.parquet')
+df.to_csv('yellow_tripdata_2025-01.csv', index=False)
+print("CSV file saved as 'yellow_tripdata_2025-01.csv'")
 
-df = pd.read_csv('yellow_tripdata_2023-01.csv')
+df = pd.read_csv('yellow_tripdata_2025-01.csv')
 
 print(df.head())
 print(df.dtypes)
@@ -134,14 +136,48 @@ If you’re running Postgres in Docker (as we discussed), you can load the data 
 
 ```
 pgcli -h localhost -U myuser -d mydb
+
+🧠 Handy Tips
+Action	Command
+List tables	    \dt
+Describe table	\d tablename
+Quit	          \q
+Run query	      SELECT * FROM your_table;
 ```
 And from Python:
 
 ```
 from sqlalchemy import create_engine
 
-engine = create_engine("postgresql://myuser:mypassword@localhost:5432/mydb")
-df.to_sql("nyc_taxi", engine, if_exists="replace", index=False)
+engine = create_engine("postgresql://myuser:mypassword@localhost:5432/nyc_taxi")
+engine.connect()
+
+# Get Schema
+print(pd.io.sql.get_schema(df, name="yellow_taxi_data", con=engine))
+
+# Create Iterator
+df_iter = pd.read_csv('yellow_tripdata_2025-01.csv', iterator=True, chunksize=100000)
+df = next(df_iter)
+df['tpep_pickup_datetime'] = pd.to_datetime(df['tpep_pickup_datetime'])
+df['tpep_dropoff_datetime'] = pd.to_datetime(df['tpep_dropoff_datetime'])
+
+# Create table 
+df.head(n=0).to_sql(name="yellow_taxi_data", con=engine, if_exists="replace")
+
+# Insert data
+%time
+df.to_sql(name="yellow_taxi_data", con=engine, if_exists="append")
+
+# Insert remaining data in table
+while True:
+    df = next(df_iter)
+    df['tpep_pickup_datetime'] = pd.to_datetime(df['tpep_pickup_datetime'])
+    df['tpep_dropoff_datetime'] = pd.to_datetime(df['tpep_dropoff_datetime'])
+    t_start = time()
+    df.to_sql(name="yellow_taxi_data", con=engine, if_exists="append")
+    t_end = time()
+    print("Inserted another chunk... took %3f seconds " % (t_end - t_start))
+
 ```
 
 #### ✅ Step 6: SQL Exploration (examples)
