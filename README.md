@@ -1,142 +1,105 @@
-# 🐳 Running PostgreSQL Locally with Docker
-#### Local PostgreSQL instance using Docker with just one command.
+# Project: Ingesting NYC Taxi Data into PostgreSQL
+#### 🎯 Steps:
 ```
-docker run --name nyc-postgres \
-  -e POSTGRES_USER=myuser \
-  -e POSTGRES_PASSWORD=mypassword \
-  -e POSTGRES_DB=nyc_taxi \
-  -p 5432:5432 \
-  -v pgdata:/var/lib/postgresql/data \
-  -d postgres:15
+Set up PostgreSQL in Docker
+Download and process NYC Taxi data (.parquet)
+Convert to .csv (optional)
+Ingest into Postgres using Pandas + SQLAlchemy
+Explore data using Jupyter Notebook
 ```
 
-#### 🔍 Parameters
+#### 🗂️ Folder Structure
 ```
-Option	   Description
---name     nyc-postgres	Name of the container
--e         POSTGRES_USER=myuser	Creates a PostgreSQL user
--e         POSTGRES_PASSWORD=...	Sets password for the user
--e         POSTGRES_DB=nyc_taxi	Creates a default database
--p         5432:5432	Maps host to container port
--v         pgdata:/...	Persists data with a Docker volume
--d         postgres:15	PostgreSQL image version
-```
-
-#### ✅ Verify it’s running
-```
-docker ps
-CONTAINER ID   IMAGE         COMMAND                  CREATED          STATUS          PORTS                                         NAMES
-435e6681c693   postgres:15   "docker-entrypoint.s…"   13 seconds ago   Up 12 seconds   0.0.0.0:5432->5432/tcp, [::]:5432->5432/tcp   nyc-postgres
-```
-See the nyc-postgres container running.
-
-#### 🛑 Stop / Start / Remove
-```
-docker stop nyc-postgres
-docker start nyc-postgres
-docker rm -f nyc-postgres
+nyc-taxi-ingest/
+├── docker-compose.yaml # Docker setup for PostgreSQL and pgAdmin
+├── Dockerfile # Optional: for custom containers (not used here)
+├── requirements.txt # Python dependencies
+├── scripts/
+│ ├── ingest_data.py # Ingests .parquet file into Postgres
+│ └── convert_parquet_to_csv.py # Converts parquet to CSV (optional)
+├── notebooks/
+│ └── explore_data.ipynb # Jupyter Notebook to explore data
+├── data/
+│ └── yellow_tripdata_2023-01.parquet # NYC taxi dataset (downloaded)
+└── README.md
 ```
 
-#### 🧪 Connect to the Database
+---
+
+## 🚀 Getting Started
+
+### 1️⃣ Clone the Repo & Set Up
+
+```
+bash
+git clone https://github.com/<your-username>/nyc-taxi-ingest.git
+cd nyc-taxi-ingest
+```
+
+### 2️⃣ Install Python Environment
+```
+Note: Because of the recent Python security model changes (especially with Homebrew's Python 3.12+), installing directly via pip3 can result in externally-managed-environment errors.
+✅ The best and safest fix: Use a virtual environment
+This avoids permission errors and doesn't affect your system Python.
+
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+### 3️⃣ Launch PostgreSQL with Docker
+```
+docker-compose up -d
+```
+PostgreSQL runs on localhost:5432
+pgAdmin runs on localhost:8080
+Login: admin@admin.com / admin
+
+### 4️⃣ Download the Dataset
+```
+cd data
+wget https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2023-01.parquet
+cd ..
+```
+
+### 5️⃣ Convert Parquet to CSV
+```
+python scripts/convert_parquet_to_csv.py
+```
+
+### 6️⃣ Ingest Data into Postgres
+```
+python scripts/ingest_data.py
+```
+This will:
+Connect to Docker PostgreSQL
+Create table yellow_taxi_data
+Insert all rows from the .csv file
+
+### 📊 Explore Data in Jupyter
+```
+jupyter notebook
+```
+Open notebooks/explore_data.ipynb and run:
+```
+from sqlalchemy import create_engine
+import pandas as pd
+
+engine = create_engine('postgresql://postgres:postgres@localhost:5432/nyc_taxi')
+df = pd.read_sql("SELECT * FROM yellow_taxi_data LIMIT 100", engine)
+df.head()
+
+# Get Schema
+print(pd.io.sql.get_schema(df, name="yellow_taxi_data", con=engine))
+```
+
+### 🧪 Connect to the Database
 Connect using:
 ```
 pgcli:
-pgcli -h localhost -p 5432 -U myuser -d nyc_taxi
+pgcli -h localhost -p 5432 -U postgres -d nyc_taxi
 
 Node: if needed install pgcli using "brew install pgcli"
-```
-
-```
-Or Python:
-from sqlalchemy import create_engine
-engine = create_engine("postgresql://myuser:mypassword@localhost:5432/nyc_taxi")
-```
-# Exploring the NY Taxi dataset
-
-#### 🚕 What Is the NYC Taxi Dataset?
-
-```
-This is a public dataset published by the NYC Taxi and Limousine Commission (TLC), which includes millions of trip records:
-
-Pickup and drop-off datetime & locations
-
-Trip distances
-Fare amounts
-Payment types
-Passenger counts
-
-It’s available monthly and for multiple years.
-````
-
-#### ✅ Step 1: Download a Sample Dataset
-Start with a small dataset to avoid memory issues during early exploration.
-
-Download a monthly Parquet or CSV file, like:
-
-```
-wget https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2025-01.parquet
-```
-👉 File will be around 75–200 MB (compressed) and contain millions of rows.
-
-#### ✅ Step 2: Explore in Python (Pandas)
-
-```
-import pandas as pd
-
-df = pd.read_parquet('yellow_tripdata_2025-01.parquet')
-df.to_csv('yellow_tripdata_2025-01.csv', index=False)
-print("CSV file saved as 'yellow_tripdata_2025-01.csv'")
-
-df = pd.read_csv('yellow_tripdata_2025-01.csv')
-
-print(df.head())
-print(df.dtypes)
-print(df.describe())
-```
-
-Columns:
-
-Date/time columns: tpep_pickup_datetime, tpep_dropoff_datetime
-Numerical: trip_distance, fare_amount
-Categorical: payment_type, VendorID
-
-#### ✅ Step 3: Clean the Data
-Some examples of what you might clean:
-
-```
-# Convert datetime columns
-df['tpep_pickup_datetime'] = pd.to_datetime(df['tpep_pickup_datetime'])
-df['tpep_dropoff_datetime'] = pd.to_datetime(df['tpep_dropoff_datetime'])
-
-# Remove invalid rows
-df = df[df['trip_distance'] > 0]
-df = df[df['fare_amount'] > 0]
-```
-
-#### ✅ Step 4: Visualize
-Using tools like matplotlib, seaborn, or plotly:
-
-```
-import seaborn as sns
-import matplotlib.pyplot as plt
-
-sns.histplot(df['trip_distance'], bins=50)
-plt.show()
-```
-
-Or:
-
-```
-df['trip_duration'] = (df['tpep_dropoff_datetime'] - df['tpep_pickup_datetime']).dt.total_seconds() / 60
-df['trip_duration'].hist(bins=50)
-```
-
-#### ✅ Step 5: Load into PostgreSQL (optional)
-If you’re running Postgres in Docker (as we discussed), you can load the data using psycopg2, sqlalchemy, or pgcli:
-
-```
-pgcli -h localhost -U myuser -d mydb
-
 🧠 Handy Tips
 Action	Command
 List tables	    \dt
@@ -144,48 +107,9 @@ Describe table	\d tablename
 Quit	          \q
 Run query	      SELECT * FROM your_table;
 ```
-And from Python:
 
 ```
+Or Python:
 from sqlalchemy import create_engine
-
-engine = create_engine("postgresql://myuser:mypassword@localhost:5432/nyc_taxi")
-engine.connect()
-
-# Get Schema
-print(pd.io.sql.get_schema(df, name="yellow_taxi_data", con=engine))
-
-# Create Iterator
-df_iter = pd.read_csv('yellow_tripdata_2025-01.csv', iterator=True, chunksize=100000)
-df = next(df_iter)
-df['tpep_pickup_datetime'] = pd.to_datetime(df['tpep_pickup_datetime'])
-df['tpep_dropoff_datetime'] = pd.to_datetime(df['tpep_dropoff_datetime'])
-
-# Create table 
-df.head(n=0).to_sql(name="yellow_taxi_data", con=engine, if_exists="replace")
-
-# Insert data
-%time
-df.to_sql(name="yellow_taxi_data", con=engine, if_exists="append")
-
-# Insert remaining data in table
-while True:
-    df = next(df_iter)
-    df['tpep_pickup_datetime'] = pd.to_datetime(df['tpep_pickup_datetime'])
-    df['tpep_dropoff_datetime'] = pd.to_datetime(df['tpep_dropoff_datetime'])
-    t_start = time()
-    df.to_sql(name="yellow_taxi_data", con=engine, if_exists="append")
-    t_end = time()
-    print("Inserted another chunk... took %3f seconds " % (t_end - t_start))
-
-```
-
-#### ✅ Step 6: SQL Exploration (examples)
-
-```
-SELECT COUNT(*) FROM nyc_taxi;
-SELECT AVG(trip_distance) FROM nyc_taxi;
-SELECT passenger_count, AVG(fare_amount)
-FROM nyc_taxi
-GROUP BY passenger_count;
+engine = create_engine("postgresql://postgres:postgres@localhost:5432/nyc_taxi")
 ```
