@@ -5,7 +5,7 @@ Set up PostgreSQL in Docker
 Download and process NYC Taxi data (.parquet)
 Convert to .csv (optional)
 Ingest into Postgres using Pandas + SQLAlchemy
-Explore data using Jupyter Notebook
+Explore data using Jupyter Notebook, pgcli
 ```
 
 #### 🗂️ Folder Structure
@@ -32,7 +32,7 @@ nyc-taxi-ingest/
 
 ```
 bash
-git clone https://github.com/<your-username>/nyc-taxi-ingest.git
+git clone https://github.com/dipikaspatil/nyc-taxi-ingest.git
 cd nyc-taxi-ingest
 ```
 
