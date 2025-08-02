@@ -6,6 +6,7 @@ Download and process NYC Taxi data (.parquet)
 Convert to .csv (optional)
 Ingest into Postgres using Pandas + SQLAlchemy
 Explore data using Jupyter Notebook, pgcli
+Connecting pgAdmin and Postgres
 ```
 
 #### 🗂️ Folder Structure
@@ -112,4 +113,27 @@ Run query	      SELECT * FROM your_table;
 Or Python:
 from sqlalchemy import create_engine
 engine = create_engine("postgresql://postgres:postgres@localhost:5432/nyc_taxi")
+```
+
+### 🎥 Connecting pgAdmin and Postgres
+```
+Open pgAdmin in Browser
+Go to: http://localhost:5050
+
+Email: admin@admin.com
+Password: admin
+
+Register Your Postgres Server
+In pgAdmin UI:
+Right-click on Servers → Register → Server
+
+Fill in details:
+🔹 General tab
+Name: nyc_postgres
+🔹 Connection tab
+Host: postgres ← (this is the name of the service in docker-compose)
+Port: 5432
+Username: postgres
+Password: postgres
+Save password: ✅
 ```
